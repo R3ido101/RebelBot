@@ -20,6 +20,7 @@ var promise = require("bluebird");
 var _ = require("lodash");
 var sqlite = require("sqlite3").verbose();
 var urban = require("./apis/urban");
+var config = require("./config.js");
 
 var auth = null;
 var endpoints = null;
@@ -42,6 +43,7 @@ function Rebelbot(cID, uID, username, password) {
     this.password = password;
     this.beamsocket = null;
     this.db = new sqlite.Database("./db.sqlite3");
+    this.lastMsg;
 }
 
 Rebelbot.prototype.login = function () {
@@ -78,6 +80,12 @@ Rebelbot.prototype.login = function () {
 
                     self.beamsocket = socket;
 
+                    if (config.bot.enablePoints) {
+                        socket.on("UserJoin", function(data){
+
+                        })
+                    }
+
                     socket.on("ChatMessage", function (data){
                         var text = "";
                         var roles = data.user_roles;
@@ -92,9 +100,16 @@ Rebelbot.prototype.login = function () {
                                     break;
                                 case 'link':
                                     text += component.text;
+                                    if (!config.bot.enableLinks && !self.isMod(roles)) {
+                                        self.delMessage(data.id, data.user_name);
+                                    }
                                     break;
                             }
                         });
+
+                        if (data.user_name == self.username) {
+                            self.lastMsg == data;
+                        }
 
                         if(text.indexOf("!") == 0) {
                             if(text.indexOf("!urban") == 0 && self.isMod(roles)) {
@@ -316,14 +331,44 @@ Rebelbot.prototype.banUser = function(user) {
         },
         jar: true
     }, function(err, res, body){
-        console.log(res);
-        console.log(body);
         if (err || res.statusCode == 400 || res.statusCode == 403 || res.statusCode == 404) {
             self.Log("banUser", "Error banning user " + user, true);
         } else {
-            self.Log("banUser", "banned user " + user, false);
+            self.sendMsg("@" + user + " has been banned!");
         }
     });
 }
+
+Rebelbot.prototype.delMessage = function(uuid, user) {
+    var self = this;
+    request({
+        method: "DELETE",
+        uri: apiUrl + "/chats/" + self.cID + "/message/" + uuid,
+        jar: true
+    }, function(err, res, body){
+        console.log(res);
+        if (err || res.statusCode == 403 || res.statusCode == 404) {
+            self.Log("delMessage", "error deleting message " + uuid, true);
+        } else {
+            self.sendMsg("@" + user + " Message deleted!");
+        }
+    });
+}
+
+Rebelbot.prototype.dbHas = function(table, field, key) {
+    var self = this;
+    self.db.run("SELECT ? FROM ? WHERE ? = ?", [field, table, key], function(err, row){
+        if (err || row == undefined) {
+            return false;
+        } else {
+            return true;
+        }
+    });
+}
+
+// Rebelbot.prototype.addPoints = function(points, user) {
+//     var self = this;
+//     if (self.has("users", ))
+// }
 
 exports.Rebelbot = Rebelbot;

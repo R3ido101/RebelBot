@@ -40,6 +40,7 @@ app.use(express.static("static"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Private API, don't use unless modifying web app.
 app.post("/papi/quotes/delete/:id", function(req, res){
     var quote = req.params.id;
     console.log(quote);
@@ -90,6 +91,116 @@ app.get("/papi/start", function(req, res, next){
 app.get("/papi/stop", function(req, res, next){
     Rebelbot.logout();
     res.redirect("/");
+});
+
+// Public API, feel free to use this in your apps!
+app.post("/api/quotes/add", function(req, res){
+    db.run("INSERT INTO quotes VALUES(null, ?, ?)", [channelID, req.body.qText], function(err){
+        var _self = this;
+        if (err) {
+            res.status(500).json({
+                status: 500,
+                text: "Interal server error."
+            });
+            console.log(err);
+        } else {
+            res.status(200).json({
+                status: 200,
+                quoteID: _self.lastID,
+            });
+        }
+    });
+});
+
+app.delete("/api/quotes/delete/:id", function(req, res){
+    var quote = req.params.id;
+    db.run("DELETE FROM quotes WHERE id = ? AND chan = ?", [quote, channelID], function(err){
+        if (err) {
+            res.status(404).json({
+                status: 404,
+                text: "Quote not found!"
+            });
+        } else {
+            res.status(200).json({
+                status: 200,
+                quoteID: quote,
+                deleted: true
+            });
+        }
+    });
+});
+
+app.post("/api/commands/add", function(req, res){
+    var comName;
+    if (req.body.name.indexOf("!") == 0) {
+        comName = req.body.name;
+    } else {
+        comName = "!" + req.body.name;
+    }
+    db.run("INSERT INTO commands VALUES(?, ?, ?)", [channelID, comName, req.body.response], function(err){
+        if (err) {
+            res.status(500).json({
+                status: 500,
+                text: "Internal server error."
+            });
+        } else {
+            res.status(200).json({
+                status: 200,
+                comName: comName,
+                response: req.body.response
+            });
+        }
+    });
+});
+
+app.delete("/api/commands/remove/:name", function(req, res){
+    var comName = req.params.name;
+    db.run("DELETE FROM commands WHERE chanID = ? AND name = ?", [channelID, comName], function(err){
+        if (err) {
+            res.status(404).json({
+                status: 404,
+                text: "Command not found!"
+            });
+        } else {
+            res.status(200).json({
+                status: 200,
+                quoteID: quote,
+                deleted: true
+            });
+        }
+    });
+})
+
+app.get("/api/commands/list", function(req, res){
+    db.all("SELECT * FROM commands WHERE chanID = ?", [channelID], function(err, row){
+        if (err) {
+            res.status(500).json({
+                status: 500,
+                text: "internal server error."
+            });
+        } else {
+            res.status(200).json({
+                status: 200,
+                commands: row
+            });
+        }
+    });
+});
+
+app.get("/api/quotes/list", function (req, res) {
+    db.all("SELECT * FROM quotes WHERE chan = ?", [channelID], function (err, row) {
+        if (err) {
+            res.status(500).json({
+                status: 500,
+                text: "internal server error."
+            });
+        } else {
+            res.status(200).json({
+                status: 200,
+                quotes: row
+            });
+        }
+    });
 });
 
 app.get("/quotes", function(req, res, next){
