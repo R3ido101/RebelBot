@@ -24,6 +24,9 @@
                 <a id="logo-container" href="/" class="brand-logo">RebelBot</a>
                 <ul class="right hide-on-med-and-down">
                     <li>
+                        <a href="./commands.html">Commands</a>
+                    </li>
+                    <li>
                         <a href="https://github.com/ripbandit/RebelBot">Github</a>
                     </li>
                 </ul>
@@ -44,7 +47,7 @@
                     <h5 class="header col s12 light grey-text text-darken-1">A locally run Beam bot</h5>
                 </div>
                 <div class="row center">
-                    <a href="#" id="download-button" class="blue accent-2 btn-large disabled">Coming Soon!</a>
+                    <a id="download-button" class="blue accent-2 btn-large"></a>
                 </div>
             </div>
         </div>
@@ -83,6 +86,20 @@
         </div>
         <!-- JS -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+        <script>
+            $(document).ready(function () {
+                getLatestRelease();
+            });
+
+            function getLatestRelease() {
+                $.getJSON("https://api.github.com/repos/ripbandit/rebelbot/releases/latest").done(function (release){
+                    var dlURL = release.zipball_url;
+                    var releaseName = release.tag_name;
+                    $("#download-button").attr("href", dlURL);
+                    $("#download-button").text("Download " + releaseName + "!");
+                });
+            }
+        </script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.3/js/materialize.min.js"></script>
         <script src="./main.js"></script>
     </body>

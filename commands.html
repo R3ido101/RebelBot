@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>RebelBot</title>
+
+        <!-- CSS -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.3/css/materialize.min.css" media="screen,projection">
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <style>
+            .marketing {
+                padding-top: 0;
+                padding-right: 15px;
+            }
+        </style>
+
+        <!-- META -->
+        <meta name="description" content="Rebelbot's Home page">
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+        <nav class="deep-orange">
+            <div class="nav-wrapper container">
+                <a id="logo-container" href="/" class="brand-logo">RebelBot</a>
+                <ul class="right hide-on-med-and-down">
+                    <li>
+                        <a href="./commands.html">Commands</a>
+                    </li>
+                    <li>
+                        <a href="https://github.com/ripbandit/RebelBot">Github</a>
+                    </li>
+                </ul>
+                <ul id="nav-mobile" class="side-nav" style="left: -250px;">
+                    <li>
+                        <a href="#">navbar link</a>
+                    </li>
+                </ul>
+                <a href="#" data-activates="nav-mobile" class="button-collapse">
+                    <i class="material-icons">menu</i>
+                </a>
+            </div>
+        </nav>
+        <div class="container">
+            <table class="striped">
+                <thead>
+                    <tr>
+                        <th data-field="command">
+                            Command
+                        </th>
+                        <th data-field="explanation">
+                            Explanation
+                        </th>
+                        <th data-field="user-level">
+                            User Level
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            !addcom {name} {response}
+                        </td>
+                        <td>
+                            Adds a command to the bot, {name} is what's used to do the command and response is what the bot responds with.
+                        </td>
+                        <td>
+                            Mod+
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            !delcom {name}
+                        </td>
+                        <td>
+                            Deletes a command from the bot, {name} is the name of the command you want to delete!
+                        </td>
+                        <td>
+                            Mod+
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            !urban {term}
+                        </td>
+                        <td>
+                            Searches UrbanDictionary for {term} and responds with the top result.
+                        </td>
+                        <td>
+                            Mod+
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            !addquote {quote}
+                        </td>
+                        <td>
+                            Adds a quote to the bot, {quote} is what the quote says. The bot responds with the ID.
+                        </td>
+                        <td>
+                            Mod+
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            !delquote {id}
+                        </td>
+                        <td>
+                            Removes a quote from the bot, {id} is the ID of the quote you wanna remove.
+                        </td>
+                        <td>
+                            Mod+
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            !bug
+                        </td>
+                        <td>
+                            Gives ways to report bugs to me!
+                        </td>
+                        <td>
+                            Mod+
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            !quote {id}
+                        </td>
+                        <td>
+                            Get a quote from the bot, {id} is the ID of the quote.
+                        </td>
+                        <td>
+                            Anyone
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            !ping
+                        </td>
+                        <td>
+                            Check to see if the bot is lagging or not!
+                        </td>
+                        <td>
+                            Anyone
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- JS -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.3/js/materialize.min.js"></script>
+        <script src="./main.js"></script>
+    </body>
+</html>
