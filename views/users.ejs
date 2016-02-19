@@ -55,7 +55,11 @@ limitations under the License.
                         <%- key.points %>
                     </td>
                     <td>
-                        <%- key.regular %>
+                        <% if (key.regular == 0) { %>
+                            <%- false %>
+                        <% } else {%>
+                            <%- true %>
+                        <% } %>
                     </td>
                 </tr>
             <% }); %>

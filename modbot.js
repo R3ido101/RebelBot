@@ -264,7 +264,7 @@ Rebelbot.prototype.login = function () {
                             if(text.indexOf("!regular") == 0 && self.isMod(roles)) {
                                 var rText = text.replace("!regular ", "");
                                 console.log(rText);
-                                self.setRegular(rText, function(err){
+                                self.setRegular(rText, 1, function(err){
                                     if (err) {
                                         self.sendMsg("Couldn't set user to regular error: " + err);
                                     } else {
@@ -557,9 +557,8 @@ Rebelbot.prototype.setPoints = function(username, points, cb) {
     TODO: Document these functions once complete.
  */
 
-Rebelbot.prototype.setRegular = function(username, cb) {
+Rebelbot.prototype.setRegular = function(username, lvl, cb) {
     var self = this;
-    var lvl = 1;
     self.db.run("UPDATE user SET regular = ? WHERE username = ?", [lvl, username], function(err, row){
         if (err) {
             cb(err);

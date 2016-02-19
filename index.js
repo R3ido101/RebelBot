@@ -290,35 +290,13 @@ app.get("/quotes", function(req, res, next){
 });
 
 app.get("/commands", function(req, res, next){
-    // db.run("SELECT * FROM commands WHERE chanID = ?", [channelID], function(err, row){
-    //     if (err) {
-    //         console.log(err);
-    //         res.json({
-    //             dbStuff: row
-    //         });
-    //     } else {
-    //         console.log(row);
-    //         res.json({
-    //             dbStuff: row
-    //         });
-    //     }
-    // });
-
-    // db.run("SELECT * FROM commands WHERE chanID = ?", [channelID], function(err, row){
-    //     console.log(row);
-    //     // res.render("commands", {commands: row});
-    //     res.json({
-    //         dbStuff: row
-    //     });
-    // });
-
     db.all("SELECT * FROM commands WHERE chanID = ?", [channelID], function(err, row){
         res.render("commands", {commands: row});
     });
 });
 
 app.get("/users", function(req, res, next){
-    db.all("SELECT * FROM users", function (err, row) {
+    db.all("SELECT * FROM user", function (err, row) {
         console.log(row);
         res.render("users", {users: row});
     });
