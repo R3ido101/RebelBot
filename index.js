@@ -18,7 +18,7 @@ limitations under the License.
 var express = require("express");
 var bot = require("./modbot");
 var _ = require("lodash");
-var sqlite = require("sqlite3").verbose();
+var sqlite3 = require("sqlite3").verbose();
 var bodyParser = require("body-parser");
 var request = require("request");
 var config = require("./config");
@@ -27,8 +27,10 @@ var channelID = config.beam.chatID;
 var port = config.web.port;
 var ip = config.web.IP;
 var Rebelbot = new bot.Rebelbot(channelID, config.beam.userID, config.beam.user, config.beam.pass);
-var db = new sqlite.Database("./db.sqlite3");
+var db = new sqlite3.Database("./db.sqlite3");
 var app = express();
+var users = [];
+var pointsTimer = setInterval(addUsers(), config.bot.autoPointInt);
 
 app.set("view engine", "ejs");
 
@@ -40,11 +42,56 @@ app.use(express.static("static"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+/*
+    WIP auto points thing, doesn't currently work even though it did before.
+ */
+function addUsers() {
+    request({
+        method: "GET",
+        uri: "https://beam.pro/api/v1/chats/" + channelID + "/users",
+        jar: true
+    },
+    function(err, res, body){
+        body = JSON.parse(body);
+        console.log(body);
+        body.forEach(function(value, index, ar){
+            var username = value.userName;
+            if (!Rebelbot.dbHas("user", "username", username)) {
+                Rebelbot.addUserDB(username, function (err){
+                    if (err) {
+                        console.log("there was an error");
+                    }
+                });
+            }
+            users.push(username);
+        });
+        autoAddPoints(users, config.bot.autoPointAmnt);
+    });
+}
+
+function autoAddPoints(userList, points) {
+    console.log("Called autoAddPoints");
+    userList.forEach(function(value, index, ar) {
+        var curUser = userList[index];
+        console.log(curUser);
+        Rebelbot.addPoints(curUser, points, function(err, err2){
+            if (err) {
+                console.log(err);
+            } else if (err2) {
+                console.log(err2);
+            }
+        });
+    });
+}
+
+addUsers();
+
+
 // Private API, don't use unless modifying web app.
 app.post("/papi/quotes/delete/:id", function(req, res){
     var quote = req.params.id;
     console.log(quote);
-    db.run("DELETE FROM quotes WHERE id = ? AND chan = ?", [quote, channelID], function(err){
+    db.run("DELETE FROM quotes WHERE id = ? AND chan = ?", [quote, channelID], function(err, row){
         if (err) {
             res.status(500).send("Unexpected error occured, check console if you are the bot host/admin!");
         } else {
@@ -63,7 +110,7 @@ app.post("/papi/commands/add", function(req, res){
     } else {
         comName = "!" + req.body.name;
     }
-    db.run("INSERT INTO commands VALUES(?, ?, ?)", [channelID, comName, req.body.response], function(err){
+    db.run("INSERT INTO commands VALUES(?, ?, ?)", [channelID, comName, req.body.response], function(err, row){
         console.log("Command " + comName + " added!");
         if (config.web.sendChange == true) {
             Rebelbot.sendMsg("Command " + comName + " added from webUI!");
@@ -75,7 +122,7 @@ app.post("/papi/commands/add", function(req, res){
 app.post("/papi/commands/delete/:name", function(req, res){
     var com = req.params.name;
     console.log(com);
-    db.run("DELETE FROM commands WHERE chanID = ? AND name = ?", [channelID, com], function(err){
+    db.run("DELETE FROM commands WHERE chanID = ? AND name = ?", [channelID, com], function(err, row){
         res.redirect("/commands");
         if (config.web.sendChange == true) {
             Rebelbot.sendMsg("Command " + com + " deleted from webUI");
@@ -93,9 +140,33 @@ app.get("/papi/stop", function(req, res, next){
     res.redirect("/");
 });
 
+app.post("/papi/points/add", function(req, res){
+    var username = req.body.username;
+    var points = req.body.points;
+    Rebelbot.addPoints(username, points, function (err, err2){
+        res.redirect("/users");
+    });
+});
+
 // Public API, feel free to use this in your apps!
+app.get("/api/quotes/list", function (req, res) {
+    db.all("SELECT * FROM quotes WHERE chan = ?", [channelID], function (err, row) {
+        if (err) {
+            res.status(500).json({
+                status: 500,
+                text: "internal server error."
+            });
+        } else {
+            res.status(200).json({
+                status: 200,
+                quotes: row
+            });
+        }
+    });
+});
+
 app.post("/api/quotes/add", function(req, res){
-    db.run("INSERT INTO quotes VALUES(null, ?, ?)", [channelID, req.body.qText], function(err){
+    db.run("INSERT INTO quotes VALUES(null, ?, ?)", [channelID, req.body.qText], function(err, row){
         var _self = this;
         if (err) {
             res.status(500).json({
@@ -114,7 +185,7 @@ app.post("/api/quotes/add", function(req, res){
 
 app.delete("/api/quotes/delete/:id", function(req, res){
     var quote = req.params.id;
-    db.run("DELETE FROM quotes WHERE id = ? AND chan = ?", [quote, channelID], function(err){
+    db.run("DELETE FROM quotes WHERE id = ? AND chan = ?", [quote, channelID], function(err, row){
         if (err) {
             res.status(404).json({
                 status: 404,
@@ -130,6 +201,22 @@ app.delete("/api/quotes/delete/:id", function(req, res){
     });
 });
 
+app.get("/api/commands/list", function (req, res) {
+    db.all("SELECT * FROM commands WHERE chanID = ?", [channelID], function (err, row) {
+        if (err) {
+            res.status(500).json({
+                status: 500,
+                text: "internal server error."
+            });
+        } else {
+            res.status(200).json({
+                status: 200,
+                commands: row
+            });
+        }
+    });
+});
+
 app.post("/api/commands/add", function(req, res){
     var comName;
     if (req.body.name.indexOf("!") == 0) {
@@ -137,7 +224,7 @@ app.post("/api/commands/add", function(req, res){
     } else {
         comName = "!" + req.body.name;
     }
-    db.run("INSERT INTO commands VALUES(?, ?, ?)", [channelID, comName, req.body.response], function(err){
+    db.run("INSERT INTO commands VALUES(?, ?, ?)", [channelID, comName, req.body.response], function(err, row){
         if (err) {
             res.status(500).json({
                 status: 500,
@@ -153,9 +240,9 @@ app.post("/api/commands/add", function(req, res){
     });
 });
 
-app.delete("/api/commands/remove/:name", function(req, res){
+app.delete("/api/commands/remove/:name", function (req, res) {
     var comName = req.params.name;
-    db.run("DELETE FROM commands WHERE chanID = ? AND name = ?", [channelID, comName], function(err){
+    db.run("DELETE FROM commands WHERE chanID = ? AND name = ?", [channelID, comName], function (err, row) {
         if (err) {
             res.status(404).json({
                 status: 404,
@@ -169,35 +256,26 @@ app.delete("/api/commands/remove/:name", function(req, res){
             });
         }
     });
-})
-
-app.get("/api/commands/list", function(req, res){
-    db.all("SELECT * FROM commands WHERE chanID = ?", [channelID], function(err, row){
-        if (err) {
-            res.status(500).json({
-                status: 500,
-                text: "internal server error."
-            });
-        } else {
-            res.status(200).json({
-                status: 200,
-                commands: row
-            });
-        }
-    });
 });
 
-app.get("/api/quotes/list", function (req, res) {
-    db.all("SELECT * FROM quotes WHERE chan = ?", [channelID], function (err, row) {
+app.post("/api/points/add", function (req, res) {
+    var username = req.body.username;
+    var points = req.body.points;
+    Rebelbot.addPoints(username, points, function(err, err2) {
         if (err) {
             res.status(500).json({
                 status: 500,
-                text: "internal server error."
+                text: "database error " + err
+            });
+        } else if (err2) {
+            res.status(500).json({
+                status: 500,
+                text: "Database error " + err
             });
         } else {
             res.status(200).json({
                 status: 200,
-                quotes: row
+                text: "Points successfully added!"
             });
         }
     });
@@ -211,8 +289,37 @@ app.get("/quotes", function(req, res, next){
 });
 
 app.get("/commands", function(req, res, next){
+    // db.run("SELECT * FROM commands WHERE chanID = ?", [channelID], function(err, row){
+    //     if (err) {
+    //         console.log(err);
+    //         res.json({
+    //             dbStuff: row
+    //         });
+    //     } else {
+    //         console.log(row);
+    //         res.json({
+    //             dbStuff: row
+    //         });
+    //     }
+    // });
+
+    // db.run("SELECT * FROM commands WHERE chanID = ?", [channelID], function(err, row){
+    //     console.log(row);
+    //     // res.render("commands", {commands: row});
+    //     res.json({
+    //         dbStuff: row
+    //     });
+    // });
+
     db.all("SELECT * FROM commands WHERE chanID = ?", [channelID], function(err, row){
         res.render("commands", {commands: row});
+    });
+});
+
+app.get("/users", function(req, res, next){
+    db.all("SELECT * FROM users", function (err, row) {
+        console.log(row);
+        res.render("users", {users: row});
     });
 });
 
