@@ -30,10 +30,9 @@ var Rebelbot = new bot.Rebelbot(channelID, config.beam.userID, config.beam.user,
 var db = new sqlite3.Database("./db.sqlite3");
 var app = express();
 var users = [];
-var pointsTimer = setInterval(function() {
-    addUsers()
-},
-config.bot.autoPointInt);
+setInterval(function() {
+    addUsers();
+}, config.bot.autoPointInt);
 
 app.set("view engine", "ejs");
 
@@ -84,9 +83,6 @@ function autoAddPoints(userList, points) {
         });
     });
 }
-
-addUsers();
-
 
 // Private API, don't use unless modifying web app.
 app.post("/papi/quotes/delete/:id", function(req, res){
