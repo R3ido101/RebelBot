@@ -587,17 +587,14 @@ Rebelbot.prototype.isLive = function() {
 
 Rebelbot.prototype.addPoints = function(username, amount, cb) {
     var self = this;
-    console.log(amount);
     self.db.get("SELECT points FROM user WHERE username = ?", [username], function(err, row) {
             amount = row.points + amount;
-            console.log(amount);
             if (err) {
                 cb(err, null);
             } else {
                 cb(null, null);
             }
         self.db.run("UPDATE user SET points = ? WHERE username = ?", [amount, username], function(err, row){
-            console.log("cb2 " + amount);
             if (err) {
                 cb(null, err);
             } else {

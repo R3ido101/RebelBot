@@ -56,7 +56,6 @@ function addUsers() {
     },
     function(err, res, body){
         body = JSON.parse(body);
-        console.log(body);
         body.forEach(function(value, index, ar){
             var username = value.userName;
             if (!Rebelbot.dbHas("user", "username", username)) {
@@ -76,7 +75,6 @@ function autoAddPoints(userList, points) {
     console.log("Called autoAddPoints");
     userList.forEach(function(value, index, ar) {
         var curUser = userList[index];
-        console.log(curUser);
         Rebelbot.addPoints(curUser, points, function(err, err2){
             if (err) {
                 console.log(err);
