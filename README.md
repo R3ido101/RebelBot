@@ -20,6 +20,8 @@ Rebelbot is a beam.pro bot made in Node.js and will have a UI with Express soon(
 - Quotes
 - Urban integration
 - Web UI
+- Points system(buggy)
+- Public API
 
 # Contributing
 To contribute just send in a pull request, guidelines for contributing are:
