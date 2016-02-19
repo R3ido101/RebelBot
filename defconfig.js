@@ -23,5 +23,16 @@ config.web.sendChange = true;
 // IP of bot(If you don't know what this is, leave it.)
 config.web.IP = "0.0.0.0";
 
+// Whether points are enabled or not, not fully implemented
+config.bot.enablePoints = true;
+// Enable points being added every X minutes/seconds/hours.
+config.bot.enableAutoPoints = true;
+// Inteval for autoPoints in milliseconds, does nothing if enableAutoPoints is disabled.
+config.bot.autoPointInt = 60000;
+// Amount of points added every time autoPointInt passes.
+config.bot.autoPointAmnt = 10;
+// Whether or not the bot allows links.
+config.bot.enableLinks = false;
+
 // DO NOT TOUCH
 module.exports = config;
