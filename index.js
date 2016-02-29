@@ -22,6 +22,7 @@ var sqlite3 = require("sqlite3").verbose();
 var bodyParser = require("body-parser");
 var request = require("request");
 var config = require("./config");
+var wsServer = require("ws").Server;
 
 var channelID = config.beam.chatID;
 var port = config.web.port;
@@ -30,6 +31,8 @@ var Rebelbot = new bot.Rebelbot(channelID, config.beam.userID, config.beam.user,
 var db = new sqlite3.Database("./db.sqlite3");
 var app = express();
 var users = [];
+var wsPort = config.web.wsPort;
+var wss = new wsServer({port: wsPort});
 setInterval(function() {
     addUsers();
 }, config.bot.autoPointInt);
@@ -44,9 +47,6 @@ app.use(express.static("static"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-/*
-    WIP auto points thing, doesn't currently work even though it did before.
- */
 function addUsers() {
     request({
         method: "GET",
@@ -59,14 +59,15 @@ function addUsers() {
             var username = value.userName;
             if (!Rebelbot.dbHas("user", "username", username)) {
                 Rebelbot.addUserDB(username, function (err){
-                    if (err) {
-                        console.log("there was an error");
+                    if (err != null) {
+                        console.log(err);
                     }
                 });
             }
             users.push(username);
         });
         autoAddPoints(users, config.bot.autoPointAmnt);
+        console.log(res.headers);
     });
 }
 
@@ -299,9 +300,18 @@ app.get("/users", function(req, res, next){
 });
 
 app.get("/", function(req, res, next) {
-    res.render("home", {isUp: Rebelbot.isUp()});
+    res.render("home", {isUp: Rebelbot.isUp(), username: config.beam.chanName});
 });
 
 app.listen(port, ip, function() {
     console.log("Web server up at: " + ip + ":" + port);
+});
+
+wss.on("connection", function connection(ws){
+    ws.on("message", function incoming(message){
+        console.log(message);
+        ws.send("fuck you");
+    });
+
+    ws.send("testing");
 });

@@ -528,9 +528,9 @@ Rebelbot.prototype.addUserDB = function(username, cb) {
 	if (!self.dbHas("user", "username", username) && username != config.beam.user) {
 		self.db.run("INSERT INTO user VALUES(?, 0, 0)", [username], function(err, row){
 			if (err) {
-				cb(false);
+				cb(err);
 			} else {
-                cb(true);
+                cb(null);
             }
 		});
 	}
@@ -557,6 +557,13 @@ Rebelbot.prototype.setPoints = function(username, points, cb) {
     TODO: Document these functions once complete.
  */
 
+
+/**
+ * Sets a users regular status
+ * @param  {String}   username username of the user.
+ * @param  {Number}   lvl      level to set user to, 1 for regular 0 for normal user.
+ * @param  {Function} cb       [description]
+ */
 Rebelbot.prototype.setRegular = function(username, lvl, cb) {
     var self = this;
     self.db.run("UPDATE user SET regular = ? WHERE username = ?", [lvl, username], function(err, row){
@@ -568,6 +575,10 @@ Rebelbot.prototype.setRegular = function(username, lvl, cb) {
     });
 }
 
+/**
+ * Checks if the user is live.
+ * @return {Boolean} returns true if online, false if not.
+ */
 Rebelbot.prototype.isLive = function() {
     request({
         method: "GET",
@@ -584,6 +595,14 @@ Rebelbot.prototype.isLive = function() {
     });
 }
 
+
+/**
+ * Add points to user.(Might change.)
+ * @param  {String}   username Username of user you want to modify.
+ * @param  {Number}   amount   Amount of points to add.
+ * @param  {Function} cb       [description]
+ * @return {[type]}            [description]
+ */
 Rebelbot.prototype.addPoints = function(username, amount, cb) {
     var self = this;
     self.db.get("SELECT points FROM user WHERE username = ?", [username], function(err, row) {
@@ -604,6 +623,12 @@ Rebelbot.prototype.addPoints = function(username, amount, cb) {
 
 }
 
+/**
+ * Get points of user.
+ * @param  {String}   username username to get points of.
+ * @param  {Function} cb       Callback to recieve data or error.
+ * @return {Object, Number}            Object is the error object, null if no error. Number is the amount of points the player has.
+ */
 Rebelbot.prototype.getPoints = function(username, cb) {
     this.db.get("SELECT points FROM user WHERE username = ?", [username], function(err, row){
         if (err) {

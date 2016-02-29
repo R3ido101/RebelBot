@@ -38,11 +38,30 @@ limitations under the License.
         <% } else { %>
             <h1>Bot is down.</h1>
         <% } %>
-        <form method="get" action="/papi/start"/>
-            <input type="submit" name="start" value="start" class="green">
-        </form>
-        <form method="get" action="/papi/stop">
-            <input type="submit" name="stop" value="stop" class="red">
-        </form>
+        <ul id="startbuttons">
+            <li>
+                <form method="get" action="/papi/start"/>
+                    <input type="submit" name="start" value="start" class="green">
+                </form>
+            </li>
+            <li>
+                <form method="get" action="/papi/stop">
+                    <input type="submit" name="stop" value="stop" class="red">
+                </form>
+            </li>
+        </ul>
+        <!-- <iframe src="https://beam.pro/embed/chat/<%=username%>"><p>Your browser does not support iframes.</p></iframe> -->
+        <script>
+            var testSocket = new WebSocket("ws://127.0.0.1:51306");
+            testSocket.onopen = function(event) {
+                if (testSocket.readyState = 1) {
+                    testSocket.send("fuck this shit");
+                }
+            }
+
+            testSocket.onMessage = function (event) {
+                console.log(event);
+            }
+        </script>
     </body>
 </html>
