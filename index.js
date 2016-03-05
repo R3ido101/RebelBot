@@ -33,9 +33,9 @@ var app = express();
 var users = [];
 var wsPort = config.web.wsPort;
 var wss = new wsServer({port: wsPort});
-setInterval(function() {
-    addUsers();
-}, config.bot.autoPointInt);
+// setInterval(function() {
+//     addUsers();
+// }, config.bot.autoPointInt);
 
 app.set("view engine", "ejs");
 
@@ -47,43 +47,43 @@ app.use(express.static("static"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-function addUsers() {
-    request({
-        method: "GET",
-        uri: "https://beam.pro/api/v1/chats/" + channelID + "/users",
-        jar: true
-    },
-    function(err, res, body){
-        body = JSON.parse(body);
-        body.forEach(function(value, index, ar){
-            var username = value.userName;
-            if (!Rebelbot.dbHas("user", "username", username)) {
-                Rebelbot.addUserDB(username, function (err){
-                    if (err != null) {
-                        console.log(err);
-                    }
-                });
-            }
-            users.push(username);
-        });
-        autoAddPoints(users, config.bot.autoPointAmnt);
-        console.log(res.headers);
-    });
-}
-
-function autoAddPoints(userList, points) {
-    console.log("Called autoAddPoints");
-    userList.forEach(function(value, index, ar) {
-        var curUser = userList[index];
-        Rebelbot.addPoints(curUser, points, function(err, err2){
-            if (err) {
-                console.log(err);
-            } else if (err2) {
-                console.log(err2);
-            }
-        });
-    });
-}
+// function addUsers() {
+//     request({
+//         method: "GET",
+//         uri: "https://beam.pro/api/v1/chats/" + channelID + "/users",
+//         jar: true
+//     },
+//     function(err, res, body){
+//         body = JSON.parse(body);
+//         body.forEach(function(value, index, ar){
+//             var username = value.userName;
+//             if (!Rebelbot.dbHas("user", "username", username)) {
+//                 Rebelbot.addUserDB(username, function (err){
+//                     if (err != null) {
+//                         console.log(err);
+//                     }
+//                 });
+//             }
+//             users.push(username);
+//         });
+//         autoAddPoints(users, config.bot.autoPointAmnt);
+//         console.log(res.headers);
+//     });
+// }
+//
+// function autoAddPoints(userList, points) {
+//     console.log("Called autoAddPoints");
+//     userList.forEach(function(value, index, ar) {
+//         var curUser = userList[index];
+//         Rebelbot.addPoints(curUser, points, function(err, err2){
+//             if (err) {
+//                 console.log(err);
+//             } else if (err2) {
+//                 console.log(err2);
+//             }
+//         });
+//     });
+// }
 
 // Private API, don't use unless modifying web app.
 app.post("/papi/quotes/delete/:id", function(req, res){

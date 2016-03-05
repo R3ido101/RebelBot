@@ -51,6 +51,7 @@ function Rebelbot(cID, uID, username, password) {
     this.beamsocket = null;
     this.db = new sqlite3.Database("./db.sqlite3");
     this.lastMsg;
+    this.defaultCommands = ["!test", "!addcom", "!delcom", "!urban", "!ping"];
 }
 
 /** Logs the bot into chat. */
@@ -126,170 +127,85 @@ Rebelbot.prototype.login = function () {
                             self.lastMsg == data;
                         }
 
-                        if(text.indexOf("!") == 0) {
-                            if(text.indexOf("!urban") == 0 && self.isMod(roles)) {
-                                var urText = text.replace("!urban ", "");
-                                var urC = new urban.Client();
-                                urC.getTerm({ term: urText }, function (err, def) {
+                        var spltText = text.split(" ");
+
+                        var msgCom = spltText[0];
+
+                        switch(msgCom) {
+                            case "!test":
+                                self.sendMsg("Test command works!");
+                                break;
+                            case "!addcom":
+                                if (self.isMod(roles)) {
+                                    if (spltText[1].indexOf("!") == 0) {
+                                        self.addCom(self.cID, spltText[1], spltText[2]);
+                                    } else {
+                                        var _comText = "!" + spltText[1];
+                                        self.addCom(self.cID, _comText, spltText[2]);
+                                    }
+                                } else {
+                                    self.sendMsg("Only mods can do this command!");
+                                }
+                                break;
+                            case "!delcom":
+                                if (self.isMod(roles)) {
+                                    if (spltText[1].indexOf("!") == 0) {
+                                        self.delCom(self.cID, spltText[1]);
+                                    } else {
+                                        var _delComText = "!" + spltText[1];
+                                        self.delCom(self.cID, spltText[1]);
+                                    }
+                                }
+                                break;
+                            case "!urban":
+                                var urbanClient = new urban.Client();
+                                urbanClient.getTerm({term: spltText[1]}, function(err, res){
                                     if (err) {
                                         self.Log("!urban", err, true);
                                     } else {
                                         self.sendMsg(def);
                                     }
                                 });
-                            }
-
-                            if (text.indexOf("!ping") == 0) {
+                                break;
+                            case "!ping":
                                 var dateTime = new Date();
                                 self.sendMsg("pong sent at: " + dateTime);
-                            }
+                                break;
+                            case "!addquote":
+                                self.addQuote(self.cID, spltText[1]);
+                                break;
+                            case "!delquote":
+                                self.delQuote(self.cID, spltText[1]);
+                                break;
+                            case "!quote":
+                                self.getQuote(self.cID, 1, function (err, res){
+                                    if (err) {
+                                        console.log(err);
+                                    } else {
+                                        self.sendMsg(res);
+                                    }
+                                });
+                                break;
+                            case "!ban":
+                                self.sendMsg("Not fully implemented right now!");
+                                break;
+                            case "!bug":
+                                self.sendMsg("Not fully implemented right now!");
+                                break;
+                        }
 
-                            if (text.indexOf("!addcom") == 0 && self.isMod(roles)) {
-                                var cText = text.replace('!addcom ', '');
-                                var spltText = cText.split(' ');
-                                var tiText = spltText.shift();
-                                var comText = spltText.toString();
-                                var allTheText = comText.replace(/,/g, ' ');
-
-                                if (tiText.indexOf("!") == 0) {
-                                    self.addCom(self.cID, tiText, allTheText);
+                        if (msgCom.indexOf("!") == 0 && self.isNotDefault(msgCom)) {
+                            self.getCom(self.cID, msgCom, function(err, res){
+                                if (err) {
+                                    console.log(err);
                                 } else {
-                                    var tiText2 = "!" + tiText;
-                                    self.addCom(self.cID, tiText2, allTheText);
-                                }
-                                self.Log("!addcom", "TEST " + tiText, false);
-                                self.Log("!addcom", "TEST " + allTheText, false);
-                            }
-
-                            if (text.indexOf("!delcom") == 0 && self.isMod(roles)) {
-                                var dText = text.replace('!delcom ', '');
-                                var dSpltText = dText.split(' ');
-                                var dTiText = dSpltText.shift();
-                                var dComText = dSpltText.toString();
-                                var dAllTheText = dComText.replace(/,/g, ' ');
-
-                                self.delCom(self.cID, dText);
-                            }
-
-                            if (text.indexOf("!addquote") == 0 && self.isMod(roles)) {
-                                var qaText = text.replace('!addquote ', '');
-                                var qaSpltText = qaText.split(' ');
-                                var qaTiText = qaSpltText.shift();
-                                var qaComText = qaSpltText.toString();
-                                var qaAllTheText = qaComText.replace(/,/g, ' ');
-
-                                console.log(qaTiText);
-
-                                self.addQuote(self.cID, qaTiText);
-                            }
-
-                            if (text.indexOf("!delquote") == 0 && self.isMod(roles)) {
-                                var qdText = text.replace('!delquote ', '');
-                                var qdSpltText = qdText.split(' ');
-                                var qdTiText = qdSpltText.shift();
-                                var qdComText = qdSpltText.toString();
-                                var qdAllTheText = qdComText.replace(/,/g, ' ');
-
-                                self.delQuote(self.cID, qdAllTheText);
-                            }
-
-                            if (text.indexOf("!quote") == 0) {
-                                var qText = text.replace('!quote ', '');
-                                var qSpltText = qText.split(' ');
-                                var qTiText = qSpltText.shift();
-                                var qComText = qSpltText.toString();
-                                var qAllTheText = qComText.replace(/,/g, ' ');
-
-                                console.log(qText);
-                                self.db.get("SELECT res FROM quotes WHERE ID = ? AND chan = ?", [qText, self.cID], function(err, row){
-                                    if (err) {
-                                        log("!quote", err, true);
-                                        self.sendMsg("There was an error getting that quote: " + err);
+                                    if (res.has("{USERNAME}")) {
+                                        self.sendMsg(res.replace("{USERNAME}", self.data.user_name));
                                     } else {
-                                        self.sendMsg(row.res);
+                                        self.sendMsg(res);
                                     }
-                                });
-                                // self.db.get("SELECT res FROM quotes WHERE ID = ? AND chan = ?", [qText, self.cID], function(err, row){
-                                //     if(err){
-                                //         log("!quote", err, true);
-                                //         self.sendMsg("There was ann error getting that quote");
-                                //     } else {
-                                //         self.sendMsg(row.res);
-                                //     }
-                                // });
-                            }
-
-                            if (text.indexOf("!ban") == 0 && self.isMod(roles)) {
-                                var banText = text.replace("!ban ", "");
-                                self.banUser(banText);
-                            }
-
-                            if(text.indexOf("!bug") == 0 && self.isMod(roles)) {
-                                self.sendMsg("You can submit bug reports at https://github.com/ripbandit/RebelBot/issues or tweet @Ripbandit_ with them!");
-                            }
-
-                            if(text.indexOf("!addpoints") == 0 && self.isMod(roles)) {
-                                var pText = text.replace("!addpoints", "");
-                                var pNText = pText.split(" ");
-                                self.setPoints(pNText[1], pNText[2], function(err){
-                                    if (err != null) {
-                                        self.sendMsg("Couldn't add points to user, error: " + err);
-                                    } else {
-                                        self.sendMsg("Added " + pNText[2] + " point(s) to " + pNText[1] + "!");
-                                    }
-                                });
-                            }
-
-                            if(text.indexOf("!points") == 0) {
-                                var pSpltText = text.split(" ");
-                                if (pSpltText.length == 1) {
-                                    self.getPoints(bName, function(err, res){
-                                        if (err) {
-                                            throw err;
-                                        } else {
-                                            self.sendMsg("You have " + res + " points!");
-                                        }
-                                    });
-                                } else if (pSpltText.length == 2) {
-                                    self.getPoints(pSpltText[1], function(err, res){
-                                        if (err) {
-                                            throw err;
-                                        } else {
-                                            self.sendMsg(pSpltText[1] + " has " + res + " points!");
-                                        }
-                                    });
                                 }
-                            }
-
-                            if(text.indexOf("!regular") == 0 && self.isMod(roles)) {
-                                var rText = text.replace("!regular ", "");
-                                console.log(rText);
-                                self.setRegular(rText, 1, function(err){
-                                    if (err) {
-                                        self.sendMsg("Couldn't set user to regular error: " + err);
-                                    } else {
-                                        self.sendMsg("Set " + rText + " to regular!");
-                                    }
-                                });
-                            }
-
-                            if (text.indexOf("!addcom") != 0 && text.indexOf("!urban") != 0 && text.indexOf("!addquote") != 0 && text.indexOf("!quote") != 0 && text.indexOf("!delcom") != 0 && text.indexOf("!delquote") != 0 &&
-                            text.indexOf("!ping") != 0 && text.indexOf("!ban") != 0 && text.indexOf("!bug") != 0 && text.indexOf("!addpoints") != 0 && text.indexOf("!regular") != 0 && text.indexOf("!points") !=0) {
-                                try {
-                                    self.getCom(self.cID, text, function(err, res){
-                                        if (err) {
-                                            throw err;
-                                        }
-                                        if (res.has("{USERNAME}")) {
-                                            self.sendMsg(res.replace("{USERNAME}", self.data.user_name));
-                                        } else {
-                                            self.sendMsg(res);
-                                        }
-                                    });
-                                } catch(ex) {
-                                    throw ex;
-                                }
-                            }
+                            });
                         }
                     });
                 }
@@ -338,6 +254,17 @@ Rebelbot.prototype.sendMsg = function (msg) {
     }
 };
 
+Rebelbot.prototype.sendWhisper = function (user, msg) {
+    var self = this;
+    if (this.beamsocket == null) {
+        self.Log("sendWhisper", "bot not logged in!", true);
+    } else {
+        this.beamsocket.call("whisper", [user, msg]).then(function(){
+            self.Log("sendWhisper", msg, false);
+        })
+    }
+}
+
 /**
  * Adds a command to the Database.
  * @param {Number} chanID ChannelID of the channel you want to add a command to.
@@ -346,14 +273,14 @@ Rebelbot.prototype.sendMsg = function (msg) {
  */
 Rebelbot.prototype.addCom = function (chanID, com, res) {
     var self = this;
-    this.db.run("INSERT INTO command VALUES(?, ?, ?)", [chanID, com, res], function (err){
+
+    console.log(chanID);
+    console.log(com);
+    console.log(res);
+    this.db.run("INSERT INTO commands VALUES(?, ?, ?)", [chanID, com, res], function (err){
         self.sendMsg("Command " + com + " added!");
+        console.log(err);
     });
-    // this.db.serialize(function () {
-    //     self.db.run("INSERT INTO 'commands' VALUES(?, ?, ?)", [chanID, com,res], function (err){
-    //         self.sendMsg("Command " + com + " added!");
-    //     });
-    // });
 };
 
 /**
@@ -402,6 +329,19 @@ Rebelbot.prototype.addQuote = function (chanID, txt) {
         self.sendMsg("Quote added with ID of " + this.lastID);
     });
 };
+
+Rebelbot.prototype.getQuote = function (chanID, qID, cb) {
+    var self = this;
+    console.log(qID);
+    console.log(chanID);
+    self.db.run("SELECT res FROM quotes WHERE ID = ? AND chan = ?", [qID, chanID],  function(err, row){
+        if (err) {
+            console.log(err);
+        } else {
+            console.log(row);
+        }
+    });
+}
 
 /**
  * Deletes a Quote from the Database.
@@ -553,11 +493,6 @@ Rebelbot.prototype.setPoints = function(username, points, cb) {
     });
 }
 
-/*
-    TODO: Document these functions once complete.
- */
-
-
 /**
  * Sets a users regular status
  * @param  {String}   username username of the user.
@@ -637,6 +572,17 @@ Rebelbot.prototype.getPoints = function(username, cb) {
             cb(null, row.points);
         }
     });
+}
+
+Rebelbot.prototype.isNotDefault = function (text) {
+    var self = this;
+    console.log("isntdefault: " + text);
+    var defCommandsList = self.defaultCommands;
+    if (defCommandsList.indexOf(text) != -1) {
+        return false;
+    } else {
+        return true;
+    }
 }
 
 exports.Rebelbot = Rebelbot;
