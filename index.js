@@ -1,5 +1,5 @@
 /*
-Copyright 2015 Ripbandit, LLC.
+Copyright 2016 Ripbandit, LLC.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -309,9 +309,16 @@ app.listen(port, ip, function() {
 
 wss.on("connection", function connection(ws){
     ws.on("message", function incoming(message){
-        console.log(message);
-        ws.send("fuck you");
+        message = JSON.parse(message);
+        console.log(message.req);
+        switch (message.req) {
+            case "checkStatus":
+                if (Rebelbot.isUp()) {
+                    ws.send(JSON.stringify({ isUp: true }));
+                } else {
+                    ws.send(JSON.stringify({ isUp: false }));
+                }
+                break;
+        }
     });
-
-    ws.send("testing");
 });

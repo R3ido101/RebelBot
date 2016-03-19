@@ -1,5 +1,5 @@
 /*
-Copyright 2015 Ripbandit, LLC.
+Copyright 2016 Ripbandit, LLC.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ function Rebelbot(cID, uID, username, password) {
     this.beamsocket = null;
     this.db = new sqlite3.Database("./db.sqlite3");
     this.lastMsg;
-    this.defaultCommands = ["!test", "!addcom", "!delcom", "!urban", "!ping"];
+    this.defaultCommands = ["!test", "!addcom", "!delcom", "!urban", "!ping", "!ban", "!bug", "!quote", "!addquote", "!delquote"];
 }
 
 /** Logs the bot into chat. */
@@ -136,25 +136,55 @@ Rebelbot.prototype.login = function () {
                                 self.sendMsg("Test command works!");
                                 break;
                             case "!addcom":
+                                var _sliceArr = spltText.slice(2);
+                                var _sliceStr = _sliceArr.toString();
+                                var _resText = _sliceStr.replace(/,/g, " ");
                                 if (self.isMod(roles)) {
                                     if (spltText[1].indexOf("!") == 0) {
-                                        self.addCom(self.cID, spltText[1], spltText[2]);
+                                      console.log(_resText);
+                                      self.addCom(config.beam.chanID, spltText[1], _resText, function(err, added, com) {
+                                        if (err) {
+                                          console.log(err);
+                                        } else {
+                                          self.sendMsg("Command " + com + " added!");
+                                        }
+                                      });
                                     } else {
                                         var _comText = "!" + spltText[1];
-                                        self.addCom(self.cID, _comText, spltText[2]);
+                                        self.addCom(self.cID, _comText, _resText, function(err, added, com){
+                                          if (err) {
+                                            console.log(err);
+                                          } else {
+                                            self.sendMsg("Command " + com + " added!");
+                                          }
+                                        });
                                     }
                                 } else {
-                                    self.sendMsg("Only mods can do this command!");
+                                    self.sendMsg(config.msgs.ModOnly);
                                 }
                                 break;
                             case "!delcom":
                                 if (self.isMod(roles)) {
                                     if (spltText[1].indexOf("!") == 0) {
-                                        self.delCom(self.cID, spltText[1]);
+                                        self.delCom(self.cID, spltText[1], function(err, deleted, com){
+                                          if (err) {
+                                            console.log(err);
+                                          } else {
+                                            self.sendMsg("command " + com + " deleted!");
+                                          }
+                                        });
                                     } else {
                                         var _delComText = "!" + spltText[1];
-                                        self.delCom(self.cID, spltText[1]);
+                                        self.delCom(self.cID, _delComText, function(err, deleted, com) {
+                                          if (err) {
+                                            console.log(err);
+                                          } else {
+                                            self.sendMsg("command " + com + " deleted!");
+                                          }
+                                        });
                                     }
+                                } else {
+                                    self.sendMsg(config.msgs.ModOnly);
                                 }
                                 break;
                             case "!urban":
@@ -169,13 +199,33 @@ Rebelbot.prototype.login = function () {
                                 break;
                             case "!ping":
                                 var dateTime = new Date();
-                                self.sendMsg("pong sent at: " + dateTime);
+                                self.sendMsg(config.msgs.PongSent + dateTime);
                                 break;
                             case "!addquote":
-                                self.addQuote(self.cID, spltText[1]);
+                                if (self.isMod(roles)) {
+                                    self.addQuote(self.cID, spltText[1], function(err, lastID){
+                                        if (err) {
+                                            console.log(err);
+                                        } else {
+                                            self.sendMsg("Quote added with ID of " + lastID);
+                                        }
+                                    });
+                                } else {
+                                    self.sendMsg(config.msgs.ModOnly);
+                                }
                                 break;
                             case "!delquote":
-                                self.delQuote(self.cID, spltText[1]);
+                                if (self.isMod(roles)) {
+                                    self.delQuote(self.cID, spltText[1], function(err, stat, lastID){
+                                        if (err) {
+                                            console.log(err);
+                                        } else {
+                                            self.sendMsg("Quote " + lastID + " deleted!");
+                                        }
+                                    });
+                                } else {
+                                    self.sendMsg(config.msgs.ModOnly);
+                                }
                                 break;
                             case "!quote":
                                 self.getQuote(self.cID, 1, function (err, res){
@@ -187,10 +237,10 @@ Rebelbot.prototype.login = function () {
                                 });
                                 break;
                             case "!ban":
-                                self.sendMsg("Not fully implemented right now!");
+                                self.sendMsg(config.msgs.NotImplemented);
                                 break;
                             case "!bug":
-                                self.sendMsg("Not fully implemented right now!");
+                                self.sendMsg(config.msgs.NotImplemented);
                                 break;
                         }
 
@@ -265,21 +315,15 @@ Rebelbot.prototype.sendWhisper = function (user, msg) {
     }
 }
 
-/**
- * Adds a command to the Database.
- * @param {Number} chanID ChannelID of the channel you want to add a command to.
- * @param {String} com    Command name.
- * @param {String} res    Command response.
- */
-Rebelbot.prototype.addCom = function (chanID, com, res) {
-    var self = this;
 
-    console.log(chanID);
-    console.log(com);
-    console.log(res);
-    this.db.run("INSERT INTO commands VALUES(?, ?, ?)", [chanID, com, res], function (err){
-        self.sendMsg("Command " + com + " added!");
-        console.log(err);
+Rebelbot.prototype.addCom = function (chanID, com, res, cb) {
+    var self = this;
+    this.db.run("INSERT INTO commands VALUES(?, ?, ?)", [chanID, com, res], function (err) {
+        if (err) {
+            cb(err, false, null);
+        } else {
+            cb(null, true, com);
+        }
     });
 };
 
@@ -288,10 +332,15 @@ Rebelbot.prototype.addCom = function (chanID, com, res) {
  * @param  {String} chanID ChannelID of the channel you want to remove a command from.
  * @param  {String} com    Command name.
  */
-Rebelbot.prototype.delCom = function (chanID, com) {
+Rebelbot.prototype.delCom = function (chanID, com, cb) {
     var self = this;
     self.db.run("DELETE FROM 'commands' WHERE chanid = ? AND name = ?", [chanID, com], function (err, row) {
-        self.sendMsg("Command " + com + " deleted!");
+        // self.sendMsg("Command " + com + " deleted!");
+        if (err) {
+            cb(err, false, null);
+        } else {
+            cb(false, true, com);
+        }
     });
 };
 
@@ -306,15 +355,14 @@ Rebelbot.prototype.getCom = function (chanID, com, cb) {
     try {
         this.db.get("SELECT response FROM commands WHERE chanID = ? AND name = ?", [chanID, com], function(err, row){
             if (err) {
-                throw err;
-                cb(err, msgString);
+                cb(err, null);
             }
             console.log(row);
             var msgString = row.response;
             cb(null, msgString);
         });
     } catch (exception) {
-        throw exception;
+        console.log(exception);
     }
 }
 
@@ -323,10 +371,15 @@ Rebelbot.prototype.getCom = function (chanID, com, cb) {
  * @param {Number} chanID ChannelID to add the Quote to.
  * @param {String} txt    Quote text.
  */
-Rebelbot.prototype.addQuote = function (chanID, txt) {
+Rebelbot.prototype.addQuote = function (chanID, txt, cb) {
     var self = this;
     self.db.run("INSERT INTO 'quotes' VALUES(null, ?, ?)", [txt, chanID], function (err) {
-        self.sendMsg("Quote added with ID of " + this.lastID);
+        // self.sendMsg("Quote added with ID of " + this.lastID);
+        if (err) {
+            cb(err, null);
+        } else {
+            cb(null, this.lastID);
+        }
     });
 };
 
@@ -348,10 +401,15 @@ Rebelbot.prototype.getQuote = function (chanID, qID, cb) {
  * @param  {Number} chanID ChannelID to remove the quote from.
  * @param  {Number} qID    QuoteID to remove.
  */
-Rebelbot.prototype.delQuote = function (chanID, qID) {
+Rebelbot.prototype.delQuote = function (chanID, qID, cb) {
     var self = this;
     self.db.run("DELETE FROM 'quotes' WHERE ID = ? AND chan = ?", [qID, chanID], function (err){
-        self.sendMsg("Quote " + qID + " deleted!");
+        // self.sendMsg("Quote " + qID + " deleted!");
+        if (err) {
+            cb(err, false, null);
+        } else {
+            cb(null, true, qID);
+        }
     });
 }
 
@@ -576,7 +634,6 @@ Rebelbot.prototype.getPoints = function(username, cb) {
 
 Rebelbot.prototype.isNotDefault = function (text) {
     var self = this;
-    console.log("isntdefault: " + text);
     var defCommandsList = self.defaultCommands;
     if (defCommandsList.indexOf(text) != -1) {
         return false;
