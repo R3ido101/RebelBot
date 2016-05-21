@@ -10,7 +10,7 @@
 /typings/form-data/form-data.d.ts
 db.sqlite3
 /db.sqlite3
-/config.js
 .vscode/
 config.json
 configtest.json
+/build
