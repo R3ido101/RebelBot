@@ -1,21 +1,39 @@
-import beamsocket from "./beamsocket.js";
+import beamlib from "./beamlib.js";
 import config from "./config.json";
+import {
+	logInfo,
+	logError
+} from "./logger.js";
 
 var channelID;
 
-var doge = new beamsocket(config.username, config.password, (err, res) => {
-	if (err) {
-		console.log(err);
+var beamclient = new beamlib(config.username, config.password, (err, res) => {
+	if (err || res == false) {
+		logError("beamclient", err);
+	} else {
+		logInfo("beamclient", "Auth Worked!");
 	}
-	console.log(res);
-});
 
-doge.getChanID("ripbandit", function(res) {
-	if (res == null) {
-		console.log("error");
-	}
-	console.log(res);
-	channelID = res;
+	beamclient.getChannelID(config.channel, (err, res) => {
+		if (err) {
+			logError("beamclient", err);
+		} else {
+			channelID = res;
+			logInfo("getChannelID", res);
+		}
 
-	doge.getAuthKey(channelID);
+		beamclient.getUserID(config.username, (err, res) => {
+			if (err) {
+				logError("beamclient", err);
+			} else {
+				beamclient.joinChat(channelID, res, (err, res) => {
+					if (err) {
+						logError("chat", err)
+					} else {
+						logInfo("chats", "connected!");
+					}
+				});
+			}
+		});
+	});
 });
