@@ -1,4 +1,4 @@
-# This project is in Alpha, there will be bugs!
+# This project is abandoned as I don't have a use for it anymore. Feel free to fork it!
 
 [![Join the chat at https://gitter.im/ripbandit/RebelBot](https://badges.gitter.im/ripbandit/RebelBot.svg)](https://gitter.im/ripbandit/RebelBot?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
